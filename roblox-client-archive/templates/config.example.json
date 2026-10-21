@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "environment": {
+    "pathBase": "workflowRoot",
+    "paths": {
+      "artifactRoot": null,
+      "xenoRoot": null,
+      "xenoWorkspace": null,
+      "playerExecutable": null,
+      "studioExecutable": null,
+      "pythonExecutable": null,
+      "luneExecutable": null
+    },
+    "discovery": {
+      "useCurrentUserEnvironment": true,
+      "additionalInstallRoots": []
+    }
+  },
+  "run": {
+    "mode": "raw_archive",
+    "identity": {
+      "gameName": null,
+      "expectedPlaceId": null,
+      "expectedUniverseId": null,
+      "captureId": null,
+      "sceneLabel": null,
+      "floorOrRound": null
+    },
+    "versions": {
+      "player": null,
+      "playerVersionHash": null,
+      "xeno": null,
+      "engine": null,
+      "apiDump": null
+    },
+    "paths": {
+      "captureRelativeDir": "captures/{captureId}",
+      "packageRelativeDir": "packages/{captureId}",
+      "derivedRelativeDir": "derived/{captureId}/{derivedId}"
+    },
+    "derivedId": null,
+    "inputArchiveArtifactId": null,
+    "inputs": {
+      "exporterOriginal": null,
+      "exporterReviewed": null,
+      "fullApiDump": null,
+      "captureEntrypoint": null,
+      "downloadEntrypoint": null,
+      "verificationEntrypoint": null,
+      "sourceRecoveryEntrypoint": null
+    },
+    "export": {
+      "xml": true,
+      "preserveReadableSource": true,
+      "preserveBytecode": true,
+      "decompile": false,
+      "remoteDecompile": false,
+      "remoteLinkedSourceFallback": false,
+      "excludeTrees": []
+    },
+    "download": {
+      "workers": 4,
+      "requestsPerSecond": 4,
+      "timeoutSeconds": 30,
+      "maxAttempts": 3,
+      "maxAssetBytes": null,
+      "useAccountCredentials": false
+    },
+    "terrain": {
+      "captureRaw": true,
+      "bounds": null,
+      "resolution": null,
+      "chunkSize": null,
+      "restoreInStudio": false
+    },
+    "optional": {
+      "nativeConversion": false,
+      "sourceRecovery": false,
+      "staticPreview": false,
+      "playPreview": false
+    },
+    "artifactIndexRelativePath": "artifact-index.json",
+    "checkpointRelativePath": "checkpoint.json"
+  }
+}

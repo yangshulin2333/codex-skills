@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Human/AI parameter worksheet. Pass values as CLI arguments; downloader does not read this file.",
+  "inventory": null,
+  "output": null,
+  "placeId": null,
+  "universeId": null,
+  "contentRoots": [],
+  "workers": 4,
+  "requestsPerSecond": 4,
+  "attempts": 3,
+  "timeoutSeconds": 30,
+  "maxAssetMiB": 256
+}

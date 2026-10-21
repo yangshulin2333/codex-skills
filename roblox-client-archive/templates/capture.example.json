@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "placeId": null,
+  "universeId": null,
+  "runId": null,
+  "xenoWorkspace": null,
+  "toolsDirectory": null,
+  "captureDirectory": null,
+  "clientFullVersion": null,
+  "terrain": {
+    "enabled": false,
+    "captureName": "explicit-box-1",
+    "min": [
+      0,
+      0,
+      0
+    ],
+    "maxExclusive": [
+      0,
+      0,
+      0
+    ],
+    "chunkStuds": [
+      64,
+      64,
+      64
+    ],
+    "resolution": 4,
+    "note": "Bind measured bounds before enabling. Probe or this explicit box never proves whole-world coverage."
+  },
+  "inputs": {
+    "exporter": {
+      "path": null,
+      "sha256": null
+    },
+    "apiDump": {
+      "path": null,
+      "sha256": null
+    },
+    "StreamBuffer.luau": {
+      "path": null,
+      "sha256": null
+    },
+    "UniversalMethodFinder.luau": {
+      "path": null,
+      "sha256": null
+    },
+    "Base64.luau": {
+      "path": null,
+      "sha256": null
+    },
+    "llz4.luau": {
+      "path": null,
+      "sha256": null
+    },
+    "USSI-LICENSE.txt": {
+      "path": null,
+      "sha256": null
+    },
+    "SomeHub-LICENSE.txt": {
+      "path": null,
+      "sha256": null
+    },
+    "Base64-LICENSE.txt": {
+      "path": null,
+      "sha256": null
+    },
+    "llz4-LICENSE.txt": {
+      "path": null,
+      "sha256": null
+    }
+  }
+}

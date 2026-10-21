@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "templateOnly": true,
+  "updatedAt": null,
+  "task": {
+    "goal": null,
+    "kind": "raw_archive",
+    "captureId": null,
+    "derivedId": null,
+    "expectedPlaceId": null,
+    "expectedUniverseId": null,
+    "sceneLabel": null,
+    "selectedStages": [
+      "raw_archive"
+    ],
+    "deliveryFormat": null
+  },
+  "configuration": {
+    "localConfigReference": null,
+    "runConfigReference": null,
+    "artifactIndexReference": null,
+    "pathBasis": "rootRole plus root-relative path; resolve through local mapping"
+  },
+  "activeObject": {
+    "artifactId": null,
+    "rootRole": null,
+    "relativePath": null,
+    "sha256": null,
+    "observedIdentityEvidenceArtifactId": null
+  },
+  "lastConfirmedResult": {
+    "stage": null,
+    "status": "not_started",
+    "summary": null,
+    "evidenceArtifactIds": [],
+    "commandRecordIds": []
+  },
+  "nextExecutableAction": {
+    "stage": null,
+    "operation": null,
+    "executionMode": "unbound",
+    "toolArtifactId": null,
+    "toolSha256": null,
+    "argv": [],
+    "workingDirectoryRole": null,
+    "inputArtifactIds": [],
+    "outputRootRole": null,
+    "outputRelativePath": null,
+    "manualSteps": [],
+    "preconditions": [],
+    "status": "not_started"
+  },
+  "inputPaths": [],
+  "acceptanceEvent": {
+    "description": null,
+    "checks": [],
+    "requiredEvidenceArtifactIds": [],
+    "status": "not_started"
+  },
+  "capabilities": {
+    "localFileRead": "unknown",
+    "localFileWrite": "unknown",
+    "processExecution": "unknown",
+    "networkAccess": "unknown",
+    "clientInteraction": "unknown",
+    "studioInteraction": "unknown",
+    "bindings": []
+  },
+  "stages": [
+    {
+      "name": "raw_archive",
+      "status": "not_started",
+      "evidenceArtifactIds": []
+    },
+    {
+      "name": "organize_assets",
+      "status": "not_selected",
+      "evidenceArtifactIds": []
+    },
+    {
+      "name": "native_conversion",
+      "status": "not_selected",
+      "evidenceArtifactIds": []
+    },
+    {
+      "name": "recover_source",
+      "status": "not_selected",
+      "evidenceArtifactIds": []
+    },
+    {
+      "name": "preview",
+      "status": "not_selected",
+      "evidenceArtifactIds": []
+    },
+    {
+      "name": "demo",
+      "status": "not_selected",
+      "evidenceArtifactIds": []
+    }
+  ],
+  "commandRecords": [],
+  "runningTasks": [],
+  "finalMissingArtifactId": null,
+  "blockers": [],
+  "untested": [],
+  "policy": {
+    "preserveOriginalBytes": true,
+    "executeOriginalGameScripts": false,
+    "decompileByDefault": false,
+    "launchStudioByDefault": false,
+    "playByDefault": false,
+    "automaticPublishing": false
+  }
+}

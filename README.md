@@ -9,6 +9,7 @@
 | 将教程、文章或多份笔记整理成中文学习笔记 | [learning-notes](learning-notes/SKILL.md) | 可读取的正文、字幕或笔记；不自带视频抓取/转写 |
 | 检查、安装或修复 Android Google 服务与 Play 商店 | [android-google-services](android-google-services/SKILL.md) | 设备与系统情况；可用工具或人工操作配合 |
 | 下载部署 3x-ui、创建节点、排障和恢复 | [three-x-ui-workflow](three-x-ui-workflow/SKILL.md) | 实际目标、环境与授权；[详细说明](three-x-ui-workflow/README.md) |
+| 从下载 Xeno 开始，导出 Roblox 客户端内容、下载资源、校验并生成本地项目和 ZIP | [roblox-client-archive](roblox-client-archive/SKILL.md) | 当前客户端或已验证原始包、本机执行能力；[完整工作流](roblox-client-archive/references/full-workflow.md) |
 
 ## 怎么用
 

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "mode": "organize_assets",
+  "environment": {
+    "pathBase": "localConfigDirectory",
+    "paths": {
+      "archive": null,
+      "output": null,
+      "luneExecutable": null
+    }
+  },
+  "input": {
+    "archiveArtifactId": null,
+    "expectedArchiveSha256": null,
+    "sceneRelativePath": null,
+    "assetManifestRelativePath": null,
+    "scriptsIndexRelativePath": null
+  },
+  "policy": {
+    "rawReadOnly": true,
+    "convertToLuau": false,
+    "executeGameScripts": false,
+    "launchStudio": false,
+    "play": false,
+    "deduplicateBySha256": true,
+    "modelExportMode": "maximal_non_overlapping",
+    "indexAllNestedModels": true,
+    "parseAnimationContainers": true,
+    "preserveUsageRoles": true,
+    "preserveMissingDependencies": true
+  },
+  "outputs": {
+    "pathsRelativeToLibraryRoot": true,
+    "provenanceRelativeDir": "provenance",
+    "validationRelativeDir": "validation"
+  },
+  "rights": {
+    "assetLicenseStatus": "not-established",
+    "preserveToolLicenseRecords": true
+  }
+}
