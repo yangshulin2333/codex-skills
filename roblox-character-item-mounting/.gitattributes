@@ -1,0 +1,6 @@
+# Keep generated native bytes stable under Windows core.autocrlf checkouts.
+*.rbxmx -text
+*.lua text eol=lf
+*.luau text eol=lf
+*.py text eol=lf
+*.md text eol=lf

@@ -6,6 +6,7 @@
 
 | 你要做什么 | 技能入口 | 需要提供 |
 |---|---|---|
+| Roblox 功能知识点：把刚性物品挂到角色身上、在假人上调整握持，或靠近拾取后穿戴 | [roblox-character-item-mounting](roblox-character-item-mounting/SKILL.md) | 物品与参考 Rig、目标身体挂点；[人类操作卡](roblox-character-item-mounting/references/operation-guide.md) |
 | 将教程、文章或多份笔记整理成中文学习笔记 | [learning-notes](learning-notes/SKILL.md) | 可读取的正文、字幕或笔记；不自带视频抓取/转写 |
 | 检查、安装或修复 Android Google 服务与 Play 商店 | [android-google-services](android-google-services/SKILL.md) | 设备与系统情况；可用工具或人工操作配合 |
 | 下载部署 3x-ui、创建节点、排障和恢复 | [three-x-ui-workflow](three-x-ui-workflow/SKILL.md) | 实际目标、环境与授权；[详细说明](three-x-ui-workflow/README.md) |
