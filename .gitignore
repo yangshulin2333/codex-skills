@@ -3,3 +3,22 @@
 .DS_Store
 Thumbs.db
 
+# Local caches, environments and private execution records
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+*.local.json
+*.log
+*.db
+*.db-*
+*.sqlite*
+*.pem
+*.key
+private/
+runtime/
+backups/
+/outputs/
+/work/
+

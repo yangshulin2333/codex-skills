@@ -1,37 +1,33 @@
-# Codex Skills
+# AI Skills 与工作流
 
-可复用的 AI Skill。每个 Skill 独立放在同名目录，入口为 `SKILL.md`。
+按任务选择一个技能，先读 `SKILL.md`，再按需读取引用资料。可供人类及能读取文件的 AI 使用，不绑定某一种 AI 平台。
 
-| Skill | 用途 | 入口 |
+## 选技能
+
+| 你要做什么 | 技能入口 | 需要提供 |
 |---|---|---|
-| learning-notes | 学习笔记工作流；具体范围见 Skill 正文 | [SKILL.md](learning-notes/SKILL.md) |
-| android-google-services | 让 AI 按设备情况协助检查、安装或修复 Google 服务与 Play 商店（俗称“Google 三件套”） | [SKILL.md](android-google-services/SKILL.md) |
-| three-x-ui-workflow | 3x-ui 下载、原生/Docker 部署、独立/共享客户端与入站、真实验收和恢复；不绑定服务器或 AI 平台 | [SKILL.md](three-x-ui-workflow/SKILL.md) |
+| 将教程、文章或多份笔记整理成中文学习笔记 | [learning-notes](learning-notes/SKILL.md) | 可读取的正文、字幕或笔记；不自带视频抓取/转写 |
+| 检查、安装或修复 Android Google 服务与 Play 商店 | [android-google-services](android-google-services/SKILL.md) | 设备与系统情况；可用工具或人工操作配合 |
+| 下载部署 3x-ui、创建节点、排障和恢复 | [three-x-ui-workflow](three-x-ui-workflow/SKILL.md) | 实际目标、环境与授权；[详细说明](three-x-ui-workflow/README.md) |
 
-## 3x-ui 通用工作流
+## 怎么用
 
-- [使用说明与跨 AI 入口](three-x-ui-workflow/README.md)
-- [通用执行规程](three-x-ui-workflow/SKILL.md)
-- [无环境绑定的参数模板](three-x-ui-workflow/templates/inputs.example.json)
+1. **支持 Skills 的工具**：按该工具的规则加载所选技能的完整目录，不只复制 `SKILL.md`。
+2. **普通聊天 AI**：上传所选目录，或提供它确实能读取的文件；先读入口，再按引用读取所需资料。无法联网时，只贴仓库链接不够。
+3. **通用请求**：
 
-Claude、DeepSeek 或其他不支持 Skills 的 AI 可直接读取这些 Markdown 文件；
-支持 Skills 的工具可按自身规则加载整个目录。无需 Codex、MCP 或特定浏览器插件。
-这是有授权边界、版本发现、验收与交接要求的工作流，不是无条件一键安装器。
+   > 请使用【技能目录名】。先读取其中的 SKILL.md，再按我的需求读取必要资料。缺少环境信息先核实，没有执行能力或尚未实测的部分请明确说明。
 
-## 手机 Google 服务 Skill
+工作流不是一键安装器。AI 是否能实际操作取决于工具与授权；本地检查通过不等于手机、服务器或代理已验收。不要上传账号、密码、私钥、令牌、订阅链接或个人备份。
 
-- [完整 Skill 目录](android-google-services/)
-- [原始 ZIP 压缩包](archives/android-google-services.zip)
-- 原始 ZIP SHA-256：`dd1e5c4ea7f0f3a3a03f3a49bf16bebf5711d19e816692c865be72c4c9fbe0a9`
+## 目录约定
 
-将 `android-google-services` 目录放到支持该格式的 AI 工具的 Skills 目录；
-也可以让 AI 读取该目录下的 `SKILL.md`。示例请求：
+- 每个技能独立放置，`SKILL.md` 是入口；参考资料、脚本和模板按需放在该技能目录内。
+- [archives](archives/README.md) 只保留原始分发快照；日常使用以技能目录为准，不自动与 ZIP 同步。
+- [scripts/check_repository.py](scripts/check_repository.py) 只检查仓库完整性及已有本地测试，不连接设备或服务器。
 
-> 使用 android-google-services，先检查我的手机是否支持，再协助安装 Google 服务和 Play 商店。登录、USB 授权和密码由我在手机上完成。
+## 维护
 
-**能力边界：**这是供 AI 使用的安装、诊断和验收工作流，不是独立的一键安装器。
-压缩包不含 APK；附带的 Python 脚本只做 ADB 只读预检，不安装组件。
-实际执行仍取决于机型与系统支持、可靠安装包来源、网络、AI 可用工具及手机端授权，
-不保证所有手机通用。需要账号或密码验证时，由用户在设备上自行完成。
+在仓库根目录运行 `python scripts/check_repository.py`（Python 3.9+，仅标准库；按环境使用 `python3` 或 `py -3`）。
 
-本仓库仅存放通用 Skill；设备序列号、账号、密码、令牌和个人备份不应提交到仓库。
+检查入口、首页收录、相对链接、Python 语法、归档摘要和各技能已有单元测试。新增或更新技能见 [CONTRIBUTING.md](CONTRIBUTING.md)。保留现有路径，避免旧链接失效。
