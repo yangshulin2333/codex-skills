@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "operation": null,
+  "target": {
+    "host": null,
+    "access_method": null,
+    "ssh_user": null,
+    "ssh_port": null,
+    "verified_host_fingerprint_ref": null,
+    "os_id": null,
+    "architecture": null,
+    "deployment_method": null,
+    "service_or_container": null,
+    "data_path": null,
+    "panel_url": null,
+    "admin_access": null
+  },
+  "release": {
+    "panel_installed": null,
+    "panel_target": null,
+    "server_core": null,
+    "client_core": null,
+    "upstream_commit_or_digest": null,
+    "download_url": null,
+    "image_ref": null,
+    "checksum_evidence_ref": null
+  },
+  "node": {
+    "inbound_id": null,
+    "inbound_action": null,
+    "label": null,
+    "protocol": null,
+    "transport": null,
+    "security": null,
+    "port": null,
+    "client_strategy": null,
+    "client_label": null,
+    "quota_gb": null,
+    "expiry": null,
+    "reset_policy": null,
+    "flow": null,
+    "server_name": null,
+    "reality_target": null,
+    "minimum_client_version": null
+  },
+  "probe": {
+    "url": null,
+    "expected_statuses": [],
+    "proxy_url": null,
+    "timeout_seconds": null
+  },
+  "scope": {
+    "authorized": false,
+    "other_targets_unchanged": true,
+    "maintenance_window_ref": null,
+    "backup_evidence_ref": null,
+    "backup_skip_approved": false,
+    "legacy_compatibility_approved": false
+  },
+  "secret_refs": {
+    "ssh_credential_ref": null,
+    "panel_credential_ref": null,
+    "node_credential_ref": null
+  }
+}
