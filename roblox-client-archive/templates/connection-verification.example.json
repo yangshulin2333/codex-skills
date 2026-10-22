@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "templateOnly": true,
+  "purpose": "Human/AI parameter worksheet. Resolve local paths or artifact references and pass CLI arguments; verify_connection.py does not read this file with --config.",
+  "capture": null,
+  "placeId": null,
+  "universeId": null,
+  "nativeLog": null,
+  "nativeLogUtcOffset": null,
+  "playerLog": null,
+  "pid": null,
+  "notBefore": null,
+  "output": null,
+  "notes": [
+    "notBefore is the recorded start of this actual connection attempt, with an explicit time zone; do not backdate it to reuse an old success.",
+    "nativeLogUtcOffset describes the native log at capture time, including any daylight-saving offset; do not assume the reviewing computer has the same zone.",
+    "After a restart, discover the new Player PID and verify the same intended PlaceId and UniverseId.",
+    "The verifier selects PID only in the native log. An operator or trusted live tool must separately establish that the Player log and diagnostic capture belong to that same process; passed alone must not open the operational gate.",
+    "A passed report corroborates recorded execution evidence, not current live connection health, complete export, or original gameplay.",
+    "If earlier diagnostic output already exists, retain it and bind a fresh capture/tools directory with prepare_capture.py; do not delete evidence or rerun the old diagnostic into it.",
+    "Keep filled worksheets, real reports, logs, credentials and game assets outside the public skill repository."
+  ]
+}

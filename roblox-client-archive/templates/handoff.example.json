@@ -57,6 +57,26 @@
     "requiredEvidenceArtifactIds": [],
     "status": "not_started"
   },
+  "connectionVerification": {
+    "worksheetArtifactId": null,
+    "attemptId": null,
+    "attemptStartedAtUtc": null,
+    "previousPlayerPid": null,
+    "currentPlayerPid": null,
+    "nativeLogUtcOffset": null,
+    "diagnosticToken": null,
+    "evidenceArtifactIds": [],
+    "processInputOwnershipConfirmed": null,
+    "processInputOwnershipEvidenceArtifactIds": [],
+    "verifierReportArtifactId": null,
+    "gateStatus": "not_started",
+    "liveConnectionChecked": false,
+    "lastLiveConnectionObservedAtUtc": null,
+    "restartAuthorizationReference": null,
+    "lastKnownFailureStage": null,
+    "recoveryHypothesis": null,
+    "confirmedRootCause": null
+  },
   "capabilities": {
     "localFileRead": "unknown",
     "localFileWrite": "unknown",

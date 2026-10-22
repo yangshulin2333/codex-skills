@@ -13,6 +13,7 @@ description: Guide the complete Roblox client-readable archive workflow, from ob
 2. [从下载 Xeno 到本地项目](references/full-workflow.md)：逐步动作、输入、输出和验收。
 3. 按当前阶段读取 [采集脚本](scripts/capture/README.md)、[下载脚本](scripts/downloads/README.md)、[打包 CLI](references/package-cli.md)。
 4. 换 AI、换电脑或中断续做时读 [通用任务与交接](references/portable-execution.md)。
+5. Attach 失败、界面报成功但没有真实输出，或此前可用而本次失效时，读 [连接验证与有条件恢复](references/connection-recovery.md)。
 
 ## 关键决策
 
@@ -27,9 +28,11 @@ description: Guide the complete Roblox client-readable archive workflow, from ob
 
 依次完成：
 
-`任务/环境 → Xeno 下载及来源核验 → 当前会话与真实 print → 导出准备 → inventory/scene/Terrain → 独立解析与脚本原件 → 资源及依赖下载 → 独立下载验收 → 可选 native → 本地项目说明 → ZIP 全量验收 → 交接`
+`任务/环境 → Xeno 下载及来源核验 → 当前会话与诊断准备 → Attach 三证据门禁 → inventory/scene/Terrain → 独立解析与脚本原件 → 资源及依赖下载 → 独立下载验收 → 可选 native → 本地项目说明 → ZIP 全量验收 → 交接`
 
 每步记录实际命令/操作、stdout/stderr/退出码、输入/输出 hash 和状态。UI 成功提示、配置通过、下载成功、Studio 可打开、Play 和原玩法恢复分别验收，不能互相替代。仅继续第一项未完成操作；先核对输入、现有进程和 partial，避免重复任务。
+
+开始导出前，核对同一新尝试的 native Attach 成功、诊断文件写读与身份、Player 日志诊断标记三项证据。先由操作者或可信现场工具确认这些输入属于同一 Player；[连接验收器](scripts/capture/verify_connection.py) 只核对记录内容，不验证输入的 OS 进程归属或现场活连接，不能仅凭其 `passed` 放行导出。门禁失败或会话已变时停止导出并保存续做状态；完整重启仅是有条件恢复分支，结束游戏前确认已有授权，细节见连接参考。
 
 ## 工具边界
 

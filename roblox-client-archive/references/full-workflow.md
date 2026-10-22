@@ -50,9 +50,15 @@ Get-Process RobloxPlayerBeta,RobloxStudioBeta -ErrorAction SilentlyContinue |
 
 ## 3. Attach 和真实执行诊断
 
-使用本次配置生成/填写客户端诊断脚本，执行 Attach 后运行唯一 print。验收要求同时有当前客户端身份、握手/通信观察结果，以及同一会话真实出现的诊断标记。
+按第 4 节准备本次诊断所需配置与脚本；准备不等于已经 Attach。记录新的 attemptId、带时区的尝试开始时间、当前 Player PID、Place/Universe 和实际工具身份。Attach 后执行生成的唯一诊断，导出前同时核对三项证据：
 
-工具界面“成功”“已执行”或按钮状态不构成最终证据。如果卡在等待加载或本地通信失败，先核对进程、工作区、日志和本地接口；只对当前已确认原因做最小修复。重启会话后重新核对目标身份和 print，不复用旧成功状态。
+1. 本次开始时间之后、对应当前 PID 的 native Attach 成功记录。
+2. 本次输出目录的诊断文件与写读探针 token 一致，目标身份和已加载状态正确。
+3. 当前 Player 日志在本次时间窗中出现同 token 的真实执行标记。
+
+先用现场观察或可信工具记录这些输入属于同一 Player 的依据，再用 [verify_connection.py](../scripts/capture/verify_connection.py) 核验记录内容。它不验证输入的 OS 进程归属，`passed` 不能单独放行导出；报告的 `liveConnectionChecked=false` 也表示没有检查现场活连接。具体参数、时区和失败处理见 [连接验证与有条件恢复](connection-recovery.md)。运行导出前仍要确认绑定的进程与场景未变化。
+
+工具界面“成功”“已执行”或按钮状态不构成最终证据。门禁不通过就停止导出、保留日志和续做状态；区分初始化查找、Attach、本地握手及诊断执行阶段，不能把所有失败都归因于旧偏移。若证据支持状态/时序问题，可尝试参考中的受控冷启动；这会结束游戏，应先复用已有授权，没有授权时说明影响并询问。重新进入同一 Place/Universe 后使用新 PID、新时间窗与新诊断，不沿用旧成功状态。冷启动是条件分支，正常连接时无需强制重启。
 
 客户端读取能力受权限与当前复制范围限制。服务端私有逻辑、尚未加载的地图、不可读属性不能因为 Attach 成功就声称已经取得。
 
@@ -61,6 +67,8 @@ Get-Process RobloxPlayerBeta,RobloxStudioBeta -ErrorAction SilentlyContinue |
 按 [采集目录说明](../scripts/capture/README.md) 取得当前兼容的 exporter、完整 API dump 及所需依赖。它们是运行时输入，需保存来源、许可、版本、hash 和引擎匹配依据，不使用未审查的动态远程代码。
 
 准备脚本在本地核对这些输入，把兼容版本的依赖本地化并生成本次包装。特定第三方代码的补丁必须与已审核结构精确匹配；不匹配时失败停止，不能把旧补丁强套给未知版本。
+
+若实际 Player 的精确 Full API Dump 不能取得，只能在有版本映射依据时评估同引擎分支 schema，并明确记录实际 schema 版本、来源/hash、差异和 `exactPlayerApiMatch=false`。给缓存写入 Player 版本键不能证明 schema 精确匹配；使用替代 schema 后仍须审查类映射、读取错误和独立对象验收，不能隐去这一限制。
 
 填写 [capture.example.json](../templates/capture.example.json) 的本地副本；确认实际 Place/Universe、唯一 captureId、Xeno workspace、输出前缀与工具 hash。脚本的真实 CLI 见采集 README。完整解压后保持相对结构，客户端 writefile 的路径基准与主机绝对路径分别处理。
 

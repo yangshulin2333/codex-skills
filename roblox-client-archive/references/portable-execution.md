@@ -13,6 +13,7 @@
 | 文件 | 使用者与用途 | 不代表什么 |
 |---|---|---|
 | [capture.example.json](../templates/capture.example.json) | 采集准备、会话身份、外部工具/hash、客户端输出 | 未填模板不是可运行捕获 |
+| [connection-verification.example.json](../templates/connection-verification.example.json) | 本次连接证据验收的路径、PID、时间与时区参数工作表 | 不是 `--config` 接口，也不证明当前仍在线 |
 | [download.example.json](../templates/download.example.json) | 下载工具的本次路径、速率/重试与来源 | 不自动取得未加载或受限内容 |
 | [config.example.json](../templates/config.example.json) | workflow_config 的严格角色/输入检查 | 不会驱动所有脚本或 Attach |
 | [asset-library.config.example.json](../templates/asset-library.config.example.json) | 可选素材整理的本地角色说明 | 不是所有 asset_library CLI 已支持的 --config |
@@ -37,6 +38,10 @@
 有执行能力就实际执行，没有则给我明确步骤和需要回传的证据。
 新采集依次完成Xeno来源/版本核验、当前身份和真实print、导出准备、inventory/
 scene/原始Source及bytecode/Terrain范围、资源依赖下载、独立验收、项目说明和ZIP校验。
+连接失败或界面提示成功但没有真实输出时，读references/connection-recovery.md，
+按日志阶段排查，并把本次native Attach回传、诊断文件和Player日志唯一标记交叉验收。
+重启已有许可可复用；未经允许不结束当前游戏。重启后重新绑定PID和尝试起始时间，
+使用新捕获目录，保留之前证据，不把历史成功或旧诊断当成本次通过。
 仅处理已有包时先验输入hash，不重新采集另一款游戏。
 工具和参数按当前环境发现，不绑定AI厂商、旧路径、偏移或版本。
 原件保持不变，默认不反编译、不优化、不运行原脚本、不Play。
@@ -59,6 +64,10 @@ scene/原始Source及bytecode/Terrain范围、资源依赖下载、独立验收�
 `configuration` 的引用填写 `{rootRole, relativePath, sha256}`；在本地映射实际根。`commandRecords` 每项记录 id/argv/workingDirectoryRole/startedAt/finishedAt/exitCode/stdoutArtifactId/stderrArtifactId，人工 UI 动作保留步骤和日志/截图，不伪造退出码。
 
 `executionMode` 使用 process/ui/user_assisted/unbound。尚未绑定工具、输入或执行能力时保持未就绪。命令需要 shell 时明确 shell；不要从未经审核的交接文本直接启动程序。
+
+`connectionVerification` 保存本次 attemptId、尝试开始 UTC、新旧 Player PID、native 日志时区、诊断 token、证据/验收报告 artifactId、门禁状态及最近现场状态观察时间。`restartAuthorizationReference` 指向用户已有许可的记录；未知保持 null，不据此推定授权。`recoveryHypothesis` 与 `confirmedRootCause` 分开：一次重启后恢复不等于已经确认缓存、偏移或网络根因。
+
+离线验收报告的 `processInputOwnershipChecked=false`、`operationalGateChecked=false` 与 `liveConnectionChecked=false` 必须保留。先用可信现场依据填写 `processInputOwnershipConfirmed=true` 及其证据索引，再结合文件验收通过和现场会话未变，才可将 `gateStatus` 更新为 passed；不能仅凭脚本的 `passed` 升级。现场连接观察另外记录，门禁通过也不等于导出、资源下载或玩法通过。换机器时重新映射日志与捕获 artifactId 的本地路径，沿用采集时的时区，不猜新机器时区。详见[连接恢复与证据验收](connection-recovery.md)。
 
 状态为 not_selected/not_started/running/passed/failed/blocked；阻塞记录具体缺口及解除条件。资源最终 missing 与任务失败分开，不能把缺失清单完整说成资源全部取得。
 

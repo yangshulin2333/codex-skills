@@ -16,6 +16,8 @@
 - [llz4](https://github.com/RiskoZS/llz4)
 - Roblox 安装/部署元数据确认实际版本后，取得对应 `https://setup.rbxcdn.com/<实际version-hash>-Full-API-Dump.json`。
 
+若精确 Player schema 无法取得，替代的同分支 schema 必须另存实际版本映射、来源/hash、采用理由和 `exactPlayerApiMatch=false`，不能把版本化缓存键当作精确匹配。具体判断见 [完整工作流](../../references/full-workflow.md) 第 4 节。
+
 ```sh
 python scripts/capture/prepare_capture.py --config /private/run/capture.json --check-only
 python scripts/capture/prepare_capture.py --config /private/run/capture.json
@@ -31,6 +33,13 @@ python scripts/capture/prepare_capture.py --config /private/run/capture.json
 
 ```lua
 assert(loadstring(readfile("archive_tools_run1/diagnostic.luau")))()
+```
+
+先独立执行诊断，再按 [连接验证与有条件恢复](../../references/connection-recovery.md) 核对本次 native Attach、诊断写读/身份及 Player token 三项证据。先通过现场观察或可信工具确认输入属于同一 Player；`verify_connection.py` 只核对记录内容，不验证输入的 OS 进程归属或完整门禁，不能仅凭 `passed` 放行。命令和时间参数见该参考；`liveConnectionChecked=false`，不能代替现场进程/场景确认。没有真实诊断文件或 Player 标记时停止，不继续下面的导出。不要把四条命令一次粘贴后仅看最后的 toast。
+
+确认当前会话仍有效后，依次执行并等待每步完成：
+
+```lua
 assert(loadstring(readfile("archive_tools_run1/inventory.luau")))()
 assert(loadstring(readfile("archive_tools_run1/run_export.luau")))()
 assert(loadstring(readfile("archive_tools_run1/terrain_probe.luau")))()
@@ -42,6 +51,8 @@ assert(loadstring(readfile("archive_tools_run1/terrain_probe.luau")))()
 | `inventory.luau` | 当前复制对象；写 `inventory.json`、会话状态候选和完成标记 | 身份、实例/资源数量、streaming 状态和脚本能力都要记录；楼层候选不自动视为当前楼层 |
 | `run_export.luau` | 本地离线 exporter；写 `scene.rbxlx`、开始/完成记录、类降级报告 | 目标 XML 不得已存在；检查记录与实际字节数、完整 XML 根标签和宿主解析结果 |
 | `terrain_probe.luau` | 角色/相机附近一个 64×64×64 studs 小区域 | 记录三通道接口支持情况；退回 ReadVoxels 时缺少独立液体通道，必须保留此限制 |
+
+诊断会新建 captureDirectory，已成功后不要重跑到同目录。会话变化、需要新连接诊断且目录已占用时，保留原目录，用 `prepare_capture.py` 绑定新的 run/capture/tools 目录；不要删掉旧诊断或强行重跑。`terrain.enabled=false` 仅关闭显式范围的 `terrain_capture.luau`，当前 `validate_and_extract.py` 仍要求小范围 `terrain_probe.luau` 的完成记录与双身份；probe 不是全量地形证明。
 
 采集不主动遍历未加载场景、不触发匹配、不读取服务器未复制内容。进入新 Place、实战楼层或等流式加载后，重新绑定独立 run 并分别采集。
 
