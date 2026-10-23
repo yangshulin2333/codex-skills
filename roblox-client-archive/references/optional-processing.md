@@ -20,9 +20,13 @@ python -B scripts/asset_library/organize_assets.py --archive <VERIFIED_RAW_ROOT>
 
 ## 参考源码
 
+主场景/活动场景分别恢复并打包的操作顺序、阅读副本和回滚验收见 [多场景、Luau 与带入口交付](scene-set-delivery.md)。这是用户明确选择时的分支，不改变原始归档默认不反编译的约定。
+
 记录 bytecode 的原始字节、版本/编码、hash、对象路径与当前工具来源/版本，抽样确认支持后批量。第三方恢复器不随本目录分发；未知格式失败时保留原件和诊断。
 
 结果至少分为严格恢复、合成候选、未恢复；原始 Source 与反编译结果分开。官方编译/解析通过只能说明语法等静态范围，AST 差异、二进制字符串和未覆盖函数须记录。不能恢复原变量名/注释或声称逻辑等价，更不能从客户端 bytecode补出未复制的服务端工程。
+
+字节码记录数与唯一输入 hash/唯一 Luau 文件数分别统计。每份结果保留工具命令数组、输入/输出 hash、stdout/stderr/退出码及独立解析与编译记录；空输出、编译错误文本和不支持的控制流保留失败，不能用占位函数伪装成功。只有 referent 和原 bytecode hash 同时匹配的成功结果才回填 `ProtectedString.Source` 的副本；验证对象数量、仅预期 Source 改变、补丁重构和独立副本回滚哈希。
 
 ## 报错清理与静态预览
 
@@ -37,5 +41,7 @@ python -B scripts/asset_library/organize_assets.py --archive <VERIFIED_RAW_ROOT>
 ## native 与 Demo
 
 原始 `.rbxlx` 转换或 Studio 另存、编辑模式重开、资源离线部署、Play、原玩法恢复分别记录。仅选择 native 时按主工作流的独立派生参数处理，不为通过配置检查开启源码或预览。
+
+仅需便携入口时可直接选择有效 `.rbxlx`；无须额外转换 `.rbxl`。采用 [打包 CLI](package-cli.md) 的显式 XML 入口参数，并区分 CheckOnly、启动、加载、显示预览与游戏执行；这些结果不互相代替。
 
 Demo 使用新的独立试验场和新写交互代码，保留空场景基线。源素材、运行态 HUD 和模板 UI 分别溯源；导入、交互、撤回及再次导入各自有实测结果，不能借用原始包校验作运行证据。

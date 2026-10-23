@@ -12,6 +12,7 @@ import stat
 import sys
 from datetime import datetime, timezone
 import zipfile
+from xml.parsers import expat
 
 
 MANIFEST = "file-checksums.json"
@@ -81,7 +82,7 @@ def safe_name(name):
     if not parts or any(part in (".", "..") for part in parts) or "/".join(parts) != name:
         raise ArchiveError(f"Unsafe archive-relative path: {name!r}")
     for part in parts:
-        if re.search(r'[<>:"|?*\x00-\x1f]', part) or part.endswith((" ", ".")):
+        if re.search(r'[<>:"|?*\x00-\x1f\x7f-\x9f\u2028\u2029]', part) or part.endswith((" ", ".")):
             raise ArchiveError(f"Non-portable Windows filename: {name!r}")
         if re.match(r"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)", part, re.I):
             raise ArchiveError(f"Reserved Windows filename: {name!r}")
@@ -172,9 +173,55 @@ def validate_required(source, files, scene_relative_path=None, metadata_relative
     return scene, evidence, native
 
 
-def launcher_bytes(native):
+def validate_launcher_scene(source, files, relative, *, explicit):
+    """Keep the legacy native alias; explicit targets also need matching file content."""
+    scene = select_input(files, relative, (), "launcher scene", {".rbxl", ".rbxlx"})
+    # The CMD bootstrap finds its static marker in the file. Reject a second one
+    # in a filename rather than letting it alter the extracted PowerShell body.
+    if "# POWERSHELL" in scene:
+        raise ArchiveError("Launcher filename contains the reserved bootstrap marker")
+    if not explicit:
+        if Path(scene).suffix.lower() != ".rbxl":
+            raise ArchiveError("An XML launcher scene requires --launcher-scene-relative-path explicitly")
+        return scene
+    path = source / scene
+    check_path_chain(path)
+    if Path(scene).suffix.lower() == ".rbxl":
+        with path.open("rb") as handle:
+            if handle.read(14) != b"<roblox!\x89\xff\r\n\x1a\n":
+                raise ArchiveError(f"Launcher .rbxl does not have the native Roblox signature: {scene}")
+        return scene
+    parser = expat.ParserCreate()
+    root_seen = False
+    def start_element(name, attributes):
+        nonlocal root_seen
+        if not root_seen:
+            root_seen = True
+            if name != "roblox" or attributes.get("version") != "4":
+                raise ArchiveError("Launcher XML must have a roblox root with version 4")
+    def reject_dtd(*_args):
+        raise ArchiveError("Launcher XML declarations for DTD/entities are not accepted")
+    parser.StartElementHandler = start_element
+    parser.StartDoctypeDeclHandler = reject_dtd
+    parser.EntityDeclHandler = reject_dtd
+    parser.ExternalEntityRefHandler = reject_dtd
+    try:
+        with path.open("rb") as handle:
+            while block := handle.read(1024 * 1024):
+                parser.Parse(block, False)
+        parser.Parse(b"", True)
+    except expat.ExpatError as exc:
+        raise ArchiveError(f"Invalid launcher .rbxlx XML: {scene}: {exc}") from exc
+    if not root_seen:
+        raise ArchiveError("Launcher XML has no Roblox root")
+    return scene
+
+
+def launcher_bytes(scene):
     # The payload is static except for a quoted, validated relative filename.
-    native = safe_name(native).replace("'", "''")
+    scene = safe_name(scene).replace("'", "''")
+    if "# POWERSHELL" in scene:
+        raise ArchiveError("Launcher filename contains the reserved bootstrap marker")
     command = r'''@echo off
 setlocal
 set "ARCHIVE_ROOT=%~dp0"
@@ -238,10 +285,10 @@ try {
   exit 0
 } catch { Write-Error $_; exit 1 }
 '''
-    return command.replace("__SCENE__", native).replace("\n", "\r\n").encode("utf-8")
+    return command.replace("__SCENE__", scene).replace("\n", "\r\n").encode("utf-8")
 
 
-def verify_archive(source, archive, before, expected_selection=None):
+def verify_archive(source, archive, before, expected_selection=None, expected_launcher_scene=None):
     """Independently reread every ZIP entry and compare it to source and manifest."""
     with zipfile.ZipFile(archive, "r") as zipped:
         info = zipped.infolist()
@@ -271,12 +318,33 @@ def verify_archive(source, archive, before, expected_selection=None):
         if actual_selection != selection or (expected_selection and selection != expected_selection):
             raise ArchiveError("Scene/metadata selection mismatch")
         launcher = metadata.get("launcherCreated")
-        if not isinstance(launcher, bool) or (launcher and not selection[2]):
+        if not isinstance(launcher, bool):
             raise ArchiveError("Invalid launcher metadata")
+        if "launcherSceneRelativePath" in metadata:
+            launcher_scene = metadata["launcherSceneRelativePath"]
+            launcher_explicit = metadata.get("launcherSceneExplicit")
+            if not isinstance(launcher_explicit, bool):
+                raise ArchiveError("Invalid explicit launcher selection metadata")
+            if launcher:
+                if not isinstance(launcher_scene, str) or not launcher_scene:
+                    raise ArchiveError("Invalid launcher scene metadata")
+                validate_launcher_scene(source, before, launcher_scene, explicit=launcher_explicit)
+                if not launcher_explicit and launcher_scene != selection[2]:
+                    raise ArchiveError("Native launcher selection mismatch")
+            elif launcher_scene is not None or launcher_explicit:
+                raise ArchiveError("Unexpected scene selection for a package without a launcher")
+        else:
+            # Schema-1 archives produced before explicit XML launchers remain
+            # verifiable with their original three-field selection and payload.
+            if "launcherSceneExplicit" in metadata or (launcher and not selection[2]):
+                raise ArchiveError("Invalid legacy launcher metadata")
+            launcher_scene = selection[2] if launcher else None
+        if expected_launcher_scene is not None and launcher_scene != expected_launcher_scene:
+            raise ArchiveError("Launcher scene selection mismatch")
         expected = dict(before)
         expected[METADATA] = {"bytes": len(zipped.read(METADATA)), "sha256": sha_bytes(zipped.read(METADATA))}
         if launcher:
-            payload = launcher_bytes(selection[2])
+            payload = launcher_bytes(launcher_scene)
             expected[LAUNCHER] = {"bytes": len(payload), "sha256": sha_bytes(payload)}
         rows = manifest.get("files")
         if not isinstance(rows, list) or len(rows) != len(expected):
@@ -304,15 +372,21 @@ def verify_archive(source, archive, before, expected_selection=None):
                     digest.update(block)
             if size != record["bytes"] or digest.hexdigest() != record["sha256"]:
                 raise ArchiveError(f"ZIP entry SHA-256 mismatch: {name}")
-    return {"entryCount": len(names), "sourceFileCount": len(before), "crc": "passed", "entrySet": "passed", "allEntrySizesAndSha256": "passed", "selection": list(selection), "launcherCreated": launcher}
+    return {"entryCount": len(names), "sourceFileCount": len(before), "crc": "passed", "entrySet": "passed", "allEntrySizesAndSha256": "passed", "selection": list(selection), "launcherCreated": launcher, "launcherSceneRelativePath": launcher_scene}
 
 
 def package_archive(source, output=None, *, verify_existing=None, verification_output=None,
                     scene_relative_path=None, metadata_relative_path=None,
-                    native_scene_relative_path=None, create_launcher=False):
+                    native_scene_relative_path=None, create_launcher=False,
+                    launcher_scene_relative_path=None):
     source = check_path_chain(source)
     if not source.is_dir():
         raise ArchiveError("Source must be an existing reviewed staging directory")
+    if launcher_scene_relative_path is not None and not create_launcher and not verify_existing:
+        raise ArchiveError("--launcher-scene-relative-path requires --create-launcher in creation mode")
+    if (launcher_scene_relative_path is not None and native_scene_relative_path is not None
+            and launcher_scene_relative_path != native_scene_relative_path):
+        raise ArchiveError("Explicit launcher and native scene options must select the same file; omit the native alias to select XML")
     if verify_existing:
         if output or create_launcher:
             raise ArchiveError("Verification mode accepts neither --output nor --create-launcher")
@@ -328,16 +402,21 @@ def package_archive(source, output=None, *, verify_existing=None, verification_o
         raise ArchiveError("Verification report and ZIP must be different files")
     before = inventory(source)
     selection = validate_required(source, before, scene_relative_path, metadata_relative_path, native_scene_relative_path)
-    if create_launcher and not selection[2]:
+    if create_launcher and not selection[2] and launcher_scene_relative_path is None:
         raise ArchiveError("--create-launcher requires a native .rbxl scene; XML is preserved but never renamed")
+    launcher_scene = None
+    if launcher_scene_relative_path is not None:
+        launcher_scene = validate_launcher_scene(source, before, launcher_scene_relative_path, explicit=True)
+    elif create_launcher:
+        launcher_scene = validate_launcher_scene(source, before, selection[2], explicit=False)
     report = {"schemaVersion": 1, "startedAtUtc": datetime.now(timezone.utc).isoformat(), "mode": "verify-existing" if verify_existing else "create", "source": str(source), "zip": str(archive), "sourceBeforeInventorySha256": inventory_hash(before), "sourceFiles": before, "status": "failed", "scope": "Byte integrity and package structure only; not gameplay, Studio loading, rights, or complete offline availability."}
     error = None
     try:
         if not verify_existing:
-            metadata = {"schemaVersion": 1, "createdAtUtc": report["startedAtUtc"], "sceneRelativePath": selection[0], "metadataRelativePath": selection[1], "nativeSceneRelativePath": selection[2], "launcherCreated": create_launcher, "sourceInventorySha256": inventory_hash(before), "scope": report["scope"]}
+            metadata = {"schemaVersion": 1, "createdAtUtc": report["startedAtUtc"], "sceneRelativePath": selection[0], "metadataRelativePath": selection[1], "nativeSceneRelativePath": selection[2], "launcherCreated": create_launcher, "launcherSceneRelativePath": launcher_scene, "launcherSceneExplicit": launcher_scene_relative_path is not None, "sourceInventorySha256": inventory_hash(before), "scope": report["scope"]}
             generated = {METADATA: json_bytes(metadata)}
             if create_launcher:
-                generated[LAUNCHER] = launcher_bytes(selection[2])
+                generated[LAUNCHER] = launcher_bytes(launcher_scene)
             records = dict(before)
             records.update({name: {"bytes": len(data), "sha256": sha_bytes(data)} for name, data in generated.items()})
             generated[MANIFEST] = json_bytes({"schemaVersion": 1, "algorithm": "sha256", "selfExcluded": [MANIFEST], "files": [{"path": name, **record} for name, record in sorted(records.items())]})
@@ -347,7 +426,7 @@ def package_archive(source, output=None, *, verify_existing=None, verification_o
                     zipped.write(source / name, name)
                 for name, data in generated.items():
                     zipped.writestr(name, data)
-        report["verification"] = verify_archive(source, archive, before, selection if not verify_existing else None)
+        report["verification"] = verify_archive(source, archive, before, selection if not verify_existing else None, launcher_scene)
         report["zipFile"] = file_digest(archive)
     except (ArchiveError, OSError, ValueError, KeyError, zipfile.BadZipFile, RuntimeError) as exc:
         error = exc
@@ -384,6 +463,7 @@ def main(argv=None):
     parser.add_argument("--scene-relative-path")
     parser.add_argument("--metadata-relative-path")
     parser.add_argument("--native-scene-relative-path")
+    parser.add_argument("--launcher-scene-relative-path", help="Explicit existing .rbxl/.rbxlx launch target; requires --create-launcher when creating, or asserts the target with --verify-existing")
     parser.add_argument("--create-launcher", action="store_true")
     args = parser.parse_args(argv)
     try:

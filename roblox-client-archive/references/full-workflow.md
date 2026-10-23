@@ -6,6 +6,8 @@
 
 先确定本次是新采集，还是继续某个已归档包。固定用户要求的游戏/场景、需要的阶段、输出根和交付形式。新采集建立唯一 captureId；已有包先检查 artifactId、大小和 SHA256，再创建 derivedId，不因电脑恰好打开另一款游戏而改变输入。
 
+若需主场景与活动/实战场景分开交付，为每项创建角色标签、独立 captureId/派生目录/ZIP，并保存已经完成包的 hash。角色由用户描述与现场依据共同记录；同一个 PlaceId 内也可以存在不同运行态场景。不要把“活动子场景”标签当作独立技术 Place 的证明。按 [多场景交付参考](scene-set-delivery.md) 填写 [场景工作表](../templates/scene-set.example.json)。
+
 检查执行者是否能读取文件、执行进程、访问网络、操作客户端与 Studio。没有能力时由操作者完成相应步骤，回传真实日志/截图/文件；AI 不应把给出步骤说成已经执行。
 
 运行配置、工具二进制、实际日志、游戏资产和 ZIP 统一放共享目录之外。机器路径来自本次发现，不能从历史用户名、盘符、游戏 ID 或版本推导。复制共享模板后填写本地值，原模板保持为空。
@@ -82,6 +84,8 @@ Get-Process RobloxPlayerBeta,RobloxStudioBeta -ErrorAction SilentlyContinue |
 
 等待生产任务完成并检查 `.partial`、锁或写入进程后，再复制回主机 capture 根。对实际得到的原件计算 hash；复制前后比大小和 hash。不要在同一 raw 目录反复覆盖失败批次。
 
+会话重连、同 Place 重进或换回合仍可能中断导出。只有 `export_start` 不算完成；必须核对完成标记、实际完整 XML 和身份。旧批次已完成的 inventory/下载结果保留，新批次重新通过连接门禁后采集；跨批次复用时分别绑定各自 inventory hash 和时间，不能描述为同一时刻快照。
+
 原始 XML 是可用于未来重建的输入；没有 `.rbxl` 时不能只改后缀。对象计数相近也不能单独证明所有不可读属性完整。
 
 ## 6. 独立解析、提取与身份验收
@@ -106,6 +110,8 @@ Get-Process RobloxPlayerBeta,RobloxStudioBeta -ErrorAction SilentlyContinue |
 
 从已取得容器中的明示 ID/URI 枚举所支持的依赖；新依赖去重后增量下载。未知容器版本和不支持的依赖扫描要记录范围，不能宣称已经发现所有隐藏资源。bytecode 静态线索、缓存关联和 HLS 是有条件的扩展步骤，不因为脚本未实现就填“通过”。
 
+补下载还要检查已完成 XML 中真实的 Content/ContentId/Font 等资源属性，与最新 inventory 引用取并集，再扣除主下载所有已处理请求键（含最终失败）。需要重试失败时另建有界重试记录，不让补充扫描隐式无限重试。当前安装资源、当前公开下载、既有归档精确复用分别计数；历史复用必须有同请求键、原文件 hash、原 manifest/库存绑定与复制后校验，不能计为本次网络取得。不同下载器/本地适配器的 manifest 先按真实 schema 验收，不改名冒充兼容。操作细节见多场景参考。
+
 每个请求最终归为 success 或 missing，并保存尝试历史。success 必须有实际文件、bytes/hash/类型；最终失败与早期曾失败但已补成功的记录分开。统计区分请求条数、引用数、物理文件数和唯一 hash 数量。
 
 动画按实际容器 class/通道分类，资源 ID 或文件名含 animation 不足以证明可播放。HLS 取得 master 清单不等于取得 segment 和离线视频；受限分支停止并记录。缓存仅在 URI/ID/长度等精确关联成立时补充，不按时间或外观猜归属。
@@ -124,15 +130,17 @@ Get-Process RobloxPlayerBeta,RobloxStudioBeta -ErrorAction SilentlyContinue |
 
 默认保存与验证 raw 通道即可；明确选择 native 地形恢复时再在副本 Edit 场景写回、保存并重开逐通道验证。CountCells 的近似变化不能单独判定数据损失。
 
-## 9. 按需生成真正的 .rbxl
+## 9. 按需恢复 Luau、提供入口或生成真正的 .rbxl
 
-用户只要 raw 时不强制打开 Studio。若明确要求原生文件/启动入口：
+用户只要 raw 时不强制反编译或打开 Studio。明确选择 Luau 时，在独立派生目录按 [多场景参考](scene-set-delivery.md) 执行严格本地恢复与独立 parse/compile，保留失败和原始 bytecode；按 referent 与原 bytecode hash 回填 `ProtectedString.Source` 的阅读副本，验证差异可重构与回滚。该副本可用 `snapshot/scene_with_luau.rbxlx`，无需先生成 `.rbxl`。
+
+只要求启动入口时，可显式选择已验证的 `.rbxlx` 或 `.rbxl`，见 [打包 CLI](package-cli.md)。只有明确要求二进制原生文件时才做以下转换：
 
 1. 绑定输入 scene/hash、独立 derivedId、输出、转换工具/Studio 角色和版本；只操作副本。
 2. 用真实转换工具或 Studio Edit 另存 `.rbxl`，保留原 XML 和保存/转换记录。不启动原游戏脚本或自动 Play。
 3. 回读并比较主要服务树、地图、class、Source/脚本对象、关键引用和重要属性；默认项/缓存变化与意外丢失分开。
 4. 再次打开最终文件，记录其 hash 和实际编辑模式结果；地形恢复另有通道回读证据。工具解码不了的属性写审计缺口。
-5. 只有验收通过的 native 才加入交付并生成启动入口。下载资源文件不等于场景 URI 已离线重绑；原始玩法恢复单独说明。
+5. 只有验收通过的 native 才作为二进制结果交付。XML 启动入口使用独立显式参数，不伪装成 native。下载资源文件不等于场景 URI 已离线重绑；原始玩法恢复单独说明。
 
 已有包仅做 native 时使用独立派生参数，不为通过主配置 validate 而伪选重新采集、源码恢复或预览。
 
@@ -150,7 +158,10 @@ terrain/                            实际探针/扫描框、通道、索引和�
 tools/ provenance/ diagnostics/      本次工具/许可/hash、执行与会话依据
 validation/                         独立解析、复制与下载验证
 artifact-index.json                 artifactId、角色、包内相对路径、bytes/hash
-scene.rbxl / 启动场景.cmd             仅在对应native实际验收后提供
+snapshot/scene_with_luau.rbxlx        仅选择并验收了 Luau 回填时提供
+source-conversion/                   可重构补丁、基线/修改/回滚与失败记录
+scene.rbxl                           仅在真正转换并验收后提供
+启动场景.cmd                          按需指向显式选择的 .rbxlx 或 .rbxl
 ```
 
 实际布局可由本次脚本输出适配，必须用相对索引明确说明。README 不能把服务端逻辑、未加载地图、受限资源、未恢复脚本或未测试玩法写成已取得。多个 Place/楼层/回合保持独立快照，不合并覆盖场景树；同资源仅按已验证键/hash复用。
@@ -161,9 +172,9 @@ scene.rbxl / 启动场景.cmd             仅在对应native实际验收后提�
 
 验收包括文件集合、逐文件复制/读回 hash、CRC、每个 ZIP entry 的未压缩大小与 SHA256、整个 ZIP 的 bytes/hash。校验清单排除自身的规则要说明。哈希不符、缺文件、多文件或 CRC 失败均不能交付为通过。
 
-带入口时在完整解压后的包根测试 CheckOnly：验证本地 native 和本机 Studio 发现，不启动 GUI。普通启动只打开编辑文件；跨机器重新发现 Studio 和依赖。双击 cmd 不等于原游戏已可离线运行。
+带入口时在完整解压后的包根测试 CheckOnly：验证场景及包内清单、本机 Studio 发现，不启动 GUI。普通启动只请求打开编辑文件；跨机器重新发现 Studio 和依赖。需要实际预览时，完整复制/解压到一次性目录，比较入口和场景 hash 后启动，逐项记录启动、场景加载、渲染预览和 Play 状态。这样 Studio 产生的锁/日志不会污染冻结的 staging。停在登录页只算启动，不能报场景加载通过；一个场景的预览不能替另一个场景验收。
 
-最终报告本地项目和 ZIP 路径、实际场景、入口、范围、最终缺失与未测试项，保留外置验收记录。原始归档完成后停止；素材整理、反编译和预览使用新的派生目录及独立验收。
+最终报告本地项目和 ZIP 路径、实际场景、入口、范围、最终缺失与未测试项，保留外置验收记录。多场景各自验收并确认旧 ZIP 的 hash 未变。仅选择原始归档时完成后停止；已选择的 Luau、入口或预览在对应派生目录完成独立验收后交付。
 
 ## 12. 中断、换 AI 与下一次
 

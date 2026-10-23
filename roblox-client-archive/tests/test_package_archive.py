@@ -209,6 +209,153 @@ class PackageTests(unittest.TestCase):
             self.assertEqual(run.returncode, 0, output)
             self.assertIn("CheckOnly: no Studio process started", output)
 
+    def test_explicit_xml_launcher_targets_reconstructed_copy_and_reverifies(self):
+        target = "snapshot/scene_with_luau.rbxlx"
+        (self.source / target).write_bytes(b'<roblox version="4"><Item class="Folder" referent="recovered"/></roblox>')
+        result = self.create(scene_relative_path="snapshot/scene.rbxlx",
+                             launcher_scene_relative_path=target, create_launcher=True)
+        self.assertEqual(result["selection"], ["snapshot/scene.rbxlx", "metadata.json", None])
+        self.assertEqual(result["launcherSceneRelativePath"], target)
+        with zipfile.ZipFile(self.zip) as handle:
+            metadata = json.loads(handle.read(archive.METADATA))
+            self.assertEqual(metadata["launcherSceneRelativePath"], target)
+            self.assertTrue(metadata["launcherSceneExplicit"])
+            self.assertIn(b"$scene=ArchivePath 'snapshot/scene_with_luau.rbxlx'", handle.read(archive.LAUNCHER))
+            self.assertEqual(handle.read("snapshot/scene.rbxlx"), (self.source / "snapshot/scene.rbxlx").read_bytes())
+        reread = archive.package_archive(self.source, verify_existing=self.zip,
+                                         scene_relative_path="snapshot/scene.rbxlx",
+                                         launcher_scene_relative_path=target)
+        self.assertEqual(reread["launcherSceneRelativePath"], target)
+        with self.assertRaisesRegex(archive.ArchiveError, "Launcher scene selection mismatch"):
+            archive.package_archive(self.source, verify_existing=self.zip,
+                                    verification_output=self.root / "mismatch.json",
+                                    scene_relative_path="snapshot/scene.rbxlx",
+                                    launcher_scene_relative_path="snapshot/scene.rbxlx")
+
+    def test_explicit_launcher_is_not_silently_ignored_without_creation_flag(self):
+        with self.assertRaisesRegex(archive.ArchiveError, "requires --create-launcher"):
+            self.create(launcher_scene_relative_path="snapshot/scene.rbxlx")
+
+    def test_native_alias_stays_native_only_and_conflicting_aliases_fail(self):
+        with self.assertRaisesRegex(archive.ArchiveError, "native scene extension"):
+            self.create(native_scene_relative_path="snapshot/scene.rbxlx", create_launcher=True)
+        (self.source / "native.rbxl").write_bytes(b"<roblox!fixture-native-header")
+        with self.assertRaisesRegex(archive.ArchiveError, "must select the same file"):
+            self.create(native_scene_relative_path="native.rbxl", create_launcher=True,
+                        launcher_scene_relative_path="snapshot/scene.rbxlx")
+
+    def test_explicit_native_launcher_requires_matching_native_signature(self):
+        path = self.source / "native.rbxl"
+        path.write_bytes((self.source / "snapshot/scene.rbxlx").read_bytes())
+        with self.assertRaisesRegex(archive.ArchiveError, "native Roblox signature"):
+            self.create(create_launcher=True, launcher_scene_relative_path="native.rbxl")
+        path.write_bytes(b"<roblox!\x89\xff\r\n\x1a\n" + bytes(18))
+        result = self.create(create_launcher=True, launcher_scene_relative_path="native.rbxl")
+        self.assertEqual(result["launcherSceneRelativePath"], "native.rbxl")
+
+    def test_explicit_xml_launcher_rejects_malformed_nonroblox_and_entity_inputs(self):
+        path = self.source / "snapshot/scene.rbxlx"
+        fixtures = ((b"<roblox!not-xml", "Invalid launcher"),
+                    (b'<roblox version="4"><Item></roblox>', "Invalid launcher"),
+                    (b'<notroblox version="4"/>', "roblox root"),
+                    (b'<roblox version="3"/>', "version 4"),
+                    (b'<!DOCTYPE roblox [<!ENTITY value "x">]><roblox version="4">&value;</roblox>', "DTD/entities"))
+        for data, error in fixtures:
+            with self.subTest(data=data):
+                path.write_bytes(data)
+                with self.assertRaisesRegex(archive.ArchiveError, error):
+                    self.create(create_launcher=True, launcher_scene_relative_path="snapshot/scene.rbxlx")
+                self.assertFalse(self.zip.exists())
+
+    def test_explicit_launcher_rejects_missing_wrong_extension_traversal_and_controls(self):
+        for target, error in (("snapshot/missing.rbxlx", "exactly one existing"),
+                              ("texture.bin", "extension"), ("../scene.rbxlx", "Unsafe"),
+                              ("snapshot/scene\x7f.rbxlx", "Non-portable"),
+                              ("snapshot/scene\u2028.rbxlx", "Non-portable"),
+                              ("snapshot/scene\n.rbxlx", "Non-portable")):
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(archive.ArchiveError, error):
+                    self.create(create_launcher=True, launcher_scene_relative_path=target)
+        marker = "snapshot/scene # POWERSHELL.rbxlx"
+        (self.source / marker).write_bytes(b'<roblox version="4"/>')
+        with self.assertRaisesRegex(archive.ArchiveError, "bootstrap marker"):
+            self.create(create_launcher=True, launcher_scene_relative_path=marker)
+
+    def test_legacy_native_launcher_metadata_remains_verifiable(self):
+        (self.source / "native.rbxl").write_bytes(b"<roblox!fixture-native-header")
+        self.create(native_scene_relative_path="native.rbxl", create_launcher=True)
+        with zipfile.ZipFile(self.zip) as handle:
+            metadata = json.loads(handle.read(archive.METADATA))
+            checks = json.loads(handle.read(archive.MANIFEST))
+        metadata.pop("launcherSceneRelativePath")
+        metadata.pop("launcherSceneExplicit")
+        payload = archive.json_bytes(metadata)
+        for row in checks["files"]:
+            if row["path"] == archive.METADATA:
+                row.update(bytes=len(payload), sha256=archive.sha_bytes(payload))
+        self.rewrite({archive.METADATA: payload, archive.MANIFEST: archive.json_bytes(checks)})
+        result = archive.package_archive(self.source, verify_existing=self.zip)
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(result["launcherSceneRelativePath"], "native.rbxl")
+
+    def test_xml_launcher_cli_contract(self):
+        result = subprocess.run([sys.executable, "-B", str(Path(SPEC.origin)),
+                                 "--source", str(self.source), "--output", str(self.zip),
+                                 "--create-launcher", "--launcher-scene-relative-path", "snapshot/scene.rbxlx"],
+                                capture_output=True, encoding="utf-8", timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["launcherSceneRelativePath"], "snapshot/scene.rbxlx")
+
+    @unittest.skipUnless(os.name == "nt", "CMD/PowerShell launcher checks require Windows")
+    def test_xml_checkonly_integrity_and_discovery_never_execute_the_discovered_file(self):
+        target = "snapshot/a 'quote' $(Write-Output INJECTED) & `tick.rbxlx"
+        (self.source / target).write_bytes(b'<roblox version="4"/>')
+        self.create(create_launcher=True, launcher_scene_relative_path=target)
+        extracted = self.root / "extracted"
+        with zipfile.ZipFile(self.zip) as handle:
+            handle.extractall(extracted)
+            text = handle.read(archive.LAUNCHER).decode("utf-8")
+        self.assertIn("@('-task','EditFile','-localPlaceFile'", text)
+        self.assertNotIn("PlayFile", text)
+        # This is deliberately not an executable. Discovery must not launch it.
+        studio = self.root / "local" / "Roblox" / "Versions" / "fixture" / "RobloxStudioBeta.exe"
+        studio.parent.mkdir(parents=True)
+        studio.write_bytes(b"not an executable")
+        replaced = {"localappdata", "programfiles", "programfiles(x86)", "studio_exe"}
+        env = {key: value for key, value in os.environ.items() if key.casefold() not in replaced}
+        env.update(LOCALAPPDATA=str(self.root / "local"), ProgramFiles=str(self.root / "programs"),
+                   **{"ProgramFiles(x86)": str(self.root / "programs-x86")})
+        env["STUDIO_EXE"] = str(studio)
+        command = ["cmd.exe", "/d", "/c", str(extracted / archive.LAUNCHER), "-CheckOnly"]
+        run = subprocess.run(command, env=env, capture_output=True, timeout=30)
+        output = (run.stdout + run.stderr).decode("utf-8", errors="replace")
+        self.assertEqual(run.returncode, 0, output)
+        self.assertIn("CheckOnly: no Studio process started", output)
+        self.assertIn("$(Write-Output INJECTED)", output)
+        self.assertIn(str(studio), output)
+        # PowerShell initializes ProgramFiles from its process architecture on
+        # startup. Set those roots in that same process to isolate discovery
+        # from any real Studio installations on the test machine.
+        discovery_env = dict(env, ARCHIVE_ROOT=str(extracted) + os.sep,
+                             ARCHIVE_LAUNCHER=str(extracted / archive.LAUNCHER),
+                             ARCHIVE_CHECK_ONLY="1", ARCHIVE_TEST_PROGRAMFILES=str(self.root / "programs"),
+                             ARCHIVE_TEST_PROGRAMFILES86=str(self.root / "programs-x86"))
+        discovery_env.pop("STUDIO_EXE")
+        discovery = ("$env:ProgramFiles=$env:ARCHIVE_TEST_PROGRAMFILES;"
+                     "${env:ProgramFiles(x86)}=$env:ARCHIVE_TEST_PROGRAMFILES86;"
+                     "$p=[IO.File]::ReadAllText($env:ARCHIVE_LAUNCHER);$m='# POWERSHELL';"
+                     "& ([ScriptBlock]::Create($p.Substring($p.LastIndexOf($m)+$m.Length)))")
+        run = subprocess.run(["powershell.exe", "-NoLogo", "-NoProfile", "-Command", discovery],
+                             env=discovery_env, capture_output=True, timeout=30)
+        output = (run.stdout + run.stderr).decode("utf-8", errors="replace")
+        self.assertEqual(run.returncode, 0, output)
+        self.assertIn("CheckOnly: no Studio process started", output)
+        self.assertIn(str(studio), output)
+        (extracted / target).write_bytes(b"tampered")
+        run = subprocess.run(command, env=env, capture_output=True, timeout=30)
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn(b"checksum failed", run.stdout + run.stderr)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

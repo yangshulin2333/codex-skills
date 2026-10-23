@@ -28,12 +28,26 @@ python scripts/package_archive.py --source $archiveSourceRoot --verify-existing 
 
 重新验收不修改 ZIP 或源资料，默认新建 `<ZIP>.reverification.json`；再次验收时用 `--verification-output` 给出新的报告路径。`--verify-existing` 不能与 `--output` 或 `--create-launcher` 同时使用。检查会重新从源资料计算哈希，重新读取所有 ZIP 文件数据，而不是只相信 ZIP 中可被一同修改的清单。报告不是数字签名，不能证明资料所有权或来源真实性。
 
-## 可选便携启动入口
+## 可选便携启动入口：XML 或二进制场景
 
-只有已经生成并另外验证过的原生 `.rbxl` 才适合加启动入口；同一包内可同时保留原始 XML：
+`.rbxlx` 可以直接作为 Studio 编辑入口，无需先转换成 `.rbxl`。选择已生成并验收的场景，显式指定包内目标；例如 Luau 阅读副本：
+
+```powershell
+python scripts/package_archive.py --source $archiveSourceRoot --output $packageZipPath --scene-relative-path "snapshot/scene_with_luau.rbxlx" --metadata-relative-path "archive-summary.json" --launcher-scene-relative-path "snapshot/scene_with_luau.rbxlx" --create-launcher
+```
+
+新参数 `--launcher-scene-relative-path` 接受现有 `.rbxlx` 或 `.rbxl`，创建包时必须配合 `--create-launcher`；它不执行格式转换或字节码恢复。XML 会独立解析为 Roblox XML，显式二进制目标会检查格式签名；这些只是结构检查，仍需实测 Studio 加载。生成的元数据记录选定入口场景。多个场景同包时，`--scene-relative-path` 是归档主场景，入口目标另行明确，不能依赖自动猜测。
+
+原有 native 用法继续兼容，`--native-scene-relative-path` 仍只接受真正的 `.rbxl`，同包可保留 XML 原件：
 
 ```powershell
 python scripts/package_archive.py --source $archiveSourceRoot --output $packageZipPath --scene-relative-path "snapshot/scene.rbxlx" --native-scene-relative-path "scene.rbxl" --metadata-relative-path "metadata.json" --create-launcher
+```
+
+未传新参数时仍使用原有已选 native，不会默认为 XML 生成入口。不要把 `.rbxlx` 传给旧的 native 参数。重新验收带显式入口的既有 ZIP 时，按该包原始选择填写 `--launcher-scene-relative-path`，配合 `--verify-existing`，不再传 `--create-launcher`：
+
+```powershell
+python scripts/package_archive.py --source $archiveSourceRoot --verify-existing $packageZipPath --scene-relative-path "snapshot/scene_with_luau.rbxlx" --metadata-relative-path "archive-summary.json" --launcher-scene-relative-path "snapshot/scene_with_luau.rbxlx"
 ```
 
 解压后在 Windows 上运行 `启动场景.cmd -CheckOnly`，先检查全部清单文件的大小和 SHA-256，以及 Studio 路径；此模式不启动 Studio。正常运行该 CMD 才调用 Studio 的 EditFile 入口打开包内相对场景路径，不执行 Play。
@@ -47,6 +61,8 @@ $env:STUDIO_EXE = $verifiedStudioExecutable
 
 默认打包过程不启动 UI、没有网络、不执行游戏代码、不改系统设置、不调整安全策略，也不部署 Roblox 内容目录。可选 CMD 的正常启动只请求 Studio 打开文件；是否成功加载、资源权限、玩法、服务器逻辑和完全离线可用性仍需按主工作流另行验证。SHA-256 正确不代表 `.rbxl` 语义有效，也不代表 Roblox 支持某种本地资源 URI。
 
+有两个场景时各自生成 ZIP 和外置验收报告，记录另一份既有 ZIP 的前后 hash。需现场预览时使用完整解压的可丢弃副本，比对入口和目标场景 hash 后再启动；记录 CheckOnly、Studio 启动、目标加载、渲染预览和 Play 的不同状态，避免 Studio 锁污染冻结的源目录。完整顺序及脱敏实测见 [多场景、Luau 与带入口交付](scene-set-delivery.md)。
+
 ## 失败和测试
 
 失败返回非零退出码，标准错误包含原因。写出 ZIP 后发现失败时，会尽可能写出 `status: failed` 的外置验收报告，并保留已生成 ZIP 便于诊断；该 ZIP 不得交付为通过版本。输入在运行中发生增删改也会失败。开始扫描前的路径、README、元数据等检查失败时，不一定生成报告。不要让编辑器、Studio 或下载程序同时写入 staging；检查不能防御恶意进程在检查与读取之间反复替换文件。
@@ -55,4 +71,4 @@ $env:STUDIO_EXE = $verifiedStudioExecutable
 python -B -m unittest discover -s tests -p test_package_archive.py -v
 ```
 
-离线测试覆盖 XML 原件保留、整包哈希、只读重新验收、内容/清单篡改、CRC 损坏、多余条目、路径越界、源文件变化、污染项、符号链接/reparse 属性、原生场景启动入口。在 Windows 上额外运行真实 CMD 的 `-CheckOnly` 分支，并把测试 Python 路径作为显式 `STUDIO_EXE`；此测试不运行该 EXE，也不证明真实 Studio 加载成功。操作系统若不允许创建符号链接，该特定真实链接测试会标记 skip，不能写成已通过。
+离线测试覆盖 XML 原件保留、整包哈希、只读重新验收、内容/清单篡改、CRC 损坏、多余条目、路径越界、源文件变化、污染项、符号链接/reparse 属性、原生及显式 XML 场景启动入口。在 Windows 上额外运行真实 CMD 的 `-CheckOnly` 分支，并把测试 Python 路径作为显式 `STUDIO_EXE`；此测试不运行该 EXE，也不证明真实 Studio 加载成功。操作系统若不允许创建符号链接，该特定真实链接测试会标记 skip，不能写成已通过。

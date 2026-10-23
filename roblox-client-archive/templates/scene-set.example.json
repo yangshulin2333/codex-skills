@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "templateOnly": true,
+  "documentKind": "scene_set_planning_and_handoff_worksheet",
+  "cliConfig": false,
+  "workflowConfigSchemaMember": false,
+  "updatedAtUtc": null,
+  "pathBasis": "root role plus relative path; resolve local roots outside this worksheet",
+  "rootMappingReference": null,
+  "sceneSetId": null,
+  "samePlaceAllowed": true,
+  "atomicSameTimeSnapshotClaimed": null,
+  "scenes": [
+    {
+      "sceneId": null,
+      "role": "main_scene",
+      "roleBasis": "user_label",
+      "userLabelReference": null,
+      "rootRole": null,
+      "identity": {
+        "placeId": null,
+        "universeId": null,
+        "placeVersion": null,
+        "evidenceReference": null,
+        "separateTechnicalPlaceClaimed": null,
+        "sharedOrEventObjectsFiltered": null
+      },
+      "captureBatches": [
+        {
+          "runId": null,
+          "previousRunId": null,
+          "status": null,
+          "resumeReason": null,
+          "currentProcessIdentityReference": null,
+          "freshConnectionGateReference": null,
+          "inventory": {"relativePath": null, "sha256": null},
+          "scene": {"relativePath": null, "sha256": null},
+          "terrain": {"relativePath": null, "sha256": null},
+          "completionEvidenceReferences": [],
+          "retainedCompletedArtifacts": []
+        }
+      ],
+      "downloadManifestBindings": [
+        {
+          "runId": null,
+          "inventoryRelativePath": null,
+          "inventorySha256": null,
+          "manifestRelativePath": null,
+          "manifestSha256": null,
+          "verificationReference": null,
+          "integrityPassed": null,
+          "declaredDependencyClosurePassed": null,
+          "allRequestsSucceeded": null
+        }
+      ],
+      "supplement": {
+        "inventoryReference": null,
+        "typedSceneReference": null,
+        "handledManifestReferences": [],
+        "selectionRule": "union(latest_inventory_refs, typed_scene_refs) minus all_handled_canonical_request_keys_including_failures",
+        "intentionalRetryReferences": []
+      },
+      "resourceProvenance": {
+        "verifiedHistoricalReuse": null,
+        "currentPublicHttp": null,
+        "currentInstalledContent": null,
+        "originEvidenceReferences": [],
+        "failureIndexReference": null,
+        "sceneReferencesRewrittenToLocalFiles": null
+      },
+      "recovery": {
+        "bytecodeIndexReference": null,
+        "externalToolsBundled": false,
+        "externalToolCommandRecords": [
+          {"purpose": null, "toolReference": null, "toolSha256": null, "argv": [], "executionEvidenceReference": null}
+        ],
+        "strictWithoutSyntheticControlFlow": null,
+        "independentParsePassed": null,
+        "independentCompilePassed": null,
+        "acceptedRecords": null,
+        "uniqueAcceptedSources": null,
+        "failedRecordsRetained": null,
+        "failureIndexReference": null,
+        "quality": "approximate_recovery_not_original_source",
+        "semanticEquivalenceVerified": null,
+        "sourceMatchingRule": "referent_and_original_bytecode_sha256",
+        "originalScene": {"relativePath": null, "sha256": null},
+        "reviewScene": {"relativePath": null, "sha256": null},
+        "transaction": {
+          "modifiedFileReference": null,
+          "diffFileReference": null,
+          "verificationReference": null,
+          "rollbackReference": null,
+          "baselineOutputReference": null,
+          "modifiedOutputReference": null,
+          "rollbackOutputReference": null,
+          "diffReconstructionPassed": null,
+          "restoredHashEqualsOriginal": null,
+          "originalUnchanged": null
+        }
+      },
+      "launcherAndPreview": {
+        "launcherRelativePath": null,
+        "targetSceneRelativePath": null,
+        "targetSceneFormat": null,
+        "stagingFrozenWithoutLocks": null,
+        "disposableExtractedPreviewReference": null,
+        "previewLauncherSha256MatchesDelivery": null,
+        "previewSceneSha256MatchesDelivery": null,
+        "launcherCheckPassed": null,
+        "studioProcessStarted": null,
+        "sceneLoaded": null,
+        "renderPreviewVerified": null,
+        "allRemoteResourcesRendered": null,
+        "playTestPerformed": null,
+        "gameCodeExecuted": null,
+        "evidenceReferences": []
+      },
+      "delivery": {
+        "zipReference": null,
+        "zipSha256": null,
+        "zipBytes": null,
+        "zipEntrySetPassed": null,
+        "zipAllEntrySizesAndHashesPassed": null,
+        "zipCrcPassed": null,
+        "sourceUnchanged": null,
+        "verificationReference": null,
+        "limitations": []
+      }
+    },
+    {
+      "sceneId": null,
+      "role": "event_subscene",
+      "roleBasis": "user_label",
+      "userLabelReference": null,
+      "rootRole": null,
+      "detailsWorksheetReference": null
+    }
+  ],
+  "previousSceneDeliveryUnchanged": [
+    {"sceneId": null, "zipReference": null, "beforeSha256": null, "afterSha256": null, "unchanged": null}
+  ],
+  "lastConfirmedResult": {"summary": null, "evidenceReferences": []},
+  "nextExecutableAction": {"operation": null, "adapterReviewReference": null, "argv": [], "inputReferences": [], "acceptanceEvidenceRequired": []}
+}

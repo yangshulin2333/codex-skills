@@ -19,6 +19,7 @@
     "localConfigReference": null,
     "runConfigReference": null,
     "artifactIndexReference": null,
+    "sceneSetWorksheetReference": null,
     "pathBasis": "rootRole plus root-relative path; resolve through local mapping"
   },
   "activeObject": {

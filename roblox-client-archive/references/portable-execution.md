@@ -19,6 +19,7 @@
 | [asset-library.config.example.json](../templates/asset-library.config.example.json) | 可选素材整理的本地角色说明 | 不是所有 asset_library CLI 已支持的 --config |
 | [artifact-index.example.json](../templates/artifact-index.example.json) | 空索引结构，填入实际角色/相对路径/hash | 不含真实历史捕获 |
 | [handoff.example.json](../templates/handoff.example.json) | 接手状态、证据与下一动作 | 不与主配置合并，也不自动执行其中命令 |
+| [scene-set.example.json](../templates/scene-set.example.json) | 各场景角色、独立批次/hash、下载绑定、Luau 与入口状态 | 是工作表；不由 CLI 自动读取，不混入严格主配置 |
 
 真实配置放共享目录与 Git 仓库外；本地路径、凭据、实际 manifest、日志和素材不提交。共享模板 null 表示未知，不套用旧游戏、用户名、端口、版本或日期。运行前读取各工具 `--help` 与说明，显式传参。
 
@@ -31,7 +32,10 @@
 本机配置：<各阶段本地配置路径，未知先发现>
 已有交接：<本地handoff.json，首次可空>
 需要的阶段：<默认从Xeno准备到原始本地项目和ZIP；其他逐项选择>
-需要真正.rbxl及启动入口：<是/否；是则另做副本转换、重开验证>
+需要真正.rbxl：<是/否；是则另做副本转换、重开验证>
+需要启动入口：<是/否；可显式选择经验证的.rbxlx或.rbxl>
+需要分开归档的场景：<单场景，或逐项标签；同Place也可分开>
+需要Luau恢复：<是/否；是则另读references/scene-set-delivery.md>
 输出根：<仓库外位置>
 
 先确认你的实际文件/终端/网络/客户端/Studio能力及当前适用项目规则。
@@ -44,7 +48,10 @@ scene/原始Source及bytecode/Terrain范围、资源依赖下载、独立验收�
 使用新捕获目录，保留之前证据，不把历史成功或旧诊断当成本次通过。
 仅处理已有包时先验输入hash，不重新采集另一款游戏。
 工具和参数按当前环境发现，不绑定AI厂商、旧路径、偏移或版本。
-原件保持不变，默认不反编译、不优化、不运行原脚本、不Play。
+原件保持不变，未选择时不反编译；选择Luau则严格本地恢复、独立parse/compile，
+仅回填匹配对象的阅读副本，保留失败、补丁与回滚证据。不运行原脚本、不自动Play。
+多场景分别绑定批次/输入hash并打包；每份下载manifest绑定自身inventory，
+旧批次资源精确复用与本次网络取得分开计数。不得用一个场景的预览替另一个验收。
 每步保存真实动作、命令数组、stdout/stderr/退出码、产物和hash；失败保留证据。
 更新本地handoff；继续只做第一项未完成操作，先检查已有进程和partial。
 最终报告项目/ZIP路径、打开方式、实际范围、最终缺失和未测试项。
@@ -62,6 +69,8 @@ scene/原始Source及bytecode/Terrain范围、资源依赖下载、独立验收�
 - `acceptanceEvent`：该动作何时算通过，以及需要的证据。
 
 `configuration` 的引用填写 `{rootRole, relativePath, sha256}`；在本地映射实际根。`commandRecords` 每项记录 id/argv/workingDirectoryRole/startedAt/finishedAt/exitCode/stdoutArtifactId/stderrArtifactId，人工 UI 动作保留步骤和日志/截图，不伪造退出码。
+
+多场景任务用 `configuration.sceneSetWorksheetReference` 指向本地场景工作表。逐项保留 role/roleBasis、实际 Place/Universe、captureId、原场景 hash、inventory 与下载 manifest 的对应 hash、恢复成功/失败、选定入口和各级验收。场景名称不是进程归属或不同 Place 的证明。共享包外置，完成的旧包只校验不覆盖，详见 [多场景交付](scene-set-delivery.md)。
 
 `executionMode` 使用 process/ui/user_assisted/unbound。尚未绑定工具、输入或执行能力时保持未就绪。命令需要 shell 时明确 shell；不要从未经审核的交接文本直接启动程序。
 
